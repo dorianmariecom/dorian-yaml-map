@@ -1,12 +1,42 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-if ARGV.size != 1 || ARGV[0] == "--help" || ARGV[0] == "-h"
-  puts "USAGE: ... | each CODE"
-  exit
+require "dorian/arguments"
+require "yaml"
+
+parsed = Dorian::Arguments.parse(version: { alias: :v }, help: { alias: :h })
+
+abort parsed.help if parsed.options.help
+
+if parsed.options.version
+  abort File.read(File.expand_path("../../VERSION", __FILE__))
 end
 
-$stdin.each_line do |it|
-  it.strip!
-  eval(ARGV.first)
+inputs = parsed.files.map { |file| File.read(file) }
+inputs = [$stdin.each_line.to_a.join] if inputs.empty?
+
+inputs.each do |input|
+  json = YAML.safe_load(input)
+
+  if json.is_a?(Hash)
+    result =
+      json.to_h do |key, value|
+        it = [key.dup, value.dup]
+        eval(parsed.arguments.join(" "))
+        it
+      end
+  elsif json.is_a?(Array)
+    result =
+      json.map do |it|
+        it = it.dup
+        eval(parsed.arguments.join(" "))
+        it
+      end
+  else
+    it = json.dup
+    eval(parsed.arguments.join(" "))
+    result = it
+  end
+
+  puts result.to_yaml
 end
