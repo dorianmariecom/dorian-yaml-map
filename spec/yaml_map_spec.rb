@@ -11,9 +11,7 @@ RSpec.describe "yaml-map" do
       - 2
       - 3
     INPUT
-    expect(
-      `cat #{file.path} | bin/yaml-map "it += 1"`
-    ).to eq(<<~OUTPUT)
+    expect(`cat #{file.path} | bin/yaml-map "it += 1"`).to eq(<<~OUTPUT)
       ---
       - 2
       - 3
